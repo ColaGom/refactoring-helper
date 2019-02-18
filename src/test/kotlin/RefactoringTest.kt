@@ -29,7 +29,7 @@ class RefactoringTest
     }
 
     @Test fun extractClassNameWhenDefaultTest() {
-        val line = "abstract class BaseSignFragment {"
-        assertEquals(Refactoring.extractClassName(line), "BaseSignFragment")
+        val line = "open class SignupFormView("
+        assertEquals(Refactoring.extractClassName(line), "SignupFormView")
     }
 }
