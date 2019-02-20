@@ -15,7 +15,6 @@ object Refactoring {
     val patternFieldName = Pattern.compile("va.* (.*?)" + Pattern.quote(":"))
     val patternType = Pattern.compile(Pattern.quote(": ") + "(.*?)" + Pattern.quote("?"))
     val patternClassName = Pattern.compile(Pattern.quote("class ") + "(.*?)\\W")
-
     fun refactoring(file: File) = refactoring(file.readText())
     fun refactoring(origin: String): String {
         val lines = origin.lines()
@@ -54,8 +53,13 @@ object Refactoring {
                 lineIdx++
             } else if (line.trimStart().startsWith("@Inject")) {
                 result.appendln(line)
-                result.appendln(lines.get(lineIdx + 1).replace("internal", ""))
+                result.appendln(lines.get(lineIdx + 1).replace("internal", "internal lateinit"))
                 lineIdx++
+            } else if (line.contains("Unbinder?")) {
+                lineIdx++
+            } else if (line.contains("findViewById")) {
+                val layoutId = extractLayoutId(line)
+                result.appendln(line.split(".")[0] + "." + layoutId)
             } else if (!line.contains("butterknife", true))
                 result.appendln(line)
 
@@ -66,6 +70,12 @@ object Refactoring {
             result.appendln(createBindBlock(type, viewList))
 
         return result.toString()
+    }
+
+    fun replaceFindView(org: String): String {
+        val suffix = if (org.contains("=")) " =" + org.split("=")[1] else ""
+        val layoutId = extractLayoutId(org)
+        return org.split(".")[0].replace(Regex("""[()]"""), "") + "." + layoutId + suffix
     }
 
     fun createBindBlock(type: SourceType, viewList: List<Pair<String, String>>): String {
@@ -90,7 +100,7 @@ object Refactoring {
 val ROOT = File("/Users/gom/Android/flitto_android/flitto-android/src/main/java/com/flitto/app")
 
 fun main(args: Array<String>) {
-    val target = File(ROOT, "main")
+    val target = File(ROOT, "ui/event")
 
     target.walk().filter { it.isFile && it.extension.equals("kt") }.forEach {
         val result = Refactoring.refactoring(it)
@@ -102,4 +112,5 @@ fun main(args: Array<String>) {
             it.print(result)
         }
     }
+
 }
