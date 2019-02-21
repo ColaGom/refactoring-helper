@@ -43,25 +43,29 @@ object Refactoring {
                 }
             }
 
-            if (line.trimStart().startsWith("@BindView")) {
-                val layoutId = extractLayoutId(line)
-                val fieldName = extractFieldName(lines.get(lineIdx + 1))
-                val type = extractType(lines.get(lineIdx + 1))
+            try {
+                if (line.trimStart().startsWith("@BindView")) {
+                    val layoutId = extractLayoutId(line)
+                    val fieldName = extractFieldName(lines.get(lineIdx + 1))
+                    val type = extractType(lines.get(lineIdx + 1))
 
-                viewList.add(Pair(fieldName, layoutId))
-                result.appendln("\tprivate lateinit var $fieldName: $type")
-                lineIdx++
-            } else if (line.trimStart().startsWith("@Inject")) {
-                result.appendln(line)
-                result.appendln(lines.get(lineIdx + 1).replace("internal", "internal lateinit"))
-                lineIdx++
-            } else if (line.contains("Unbinder?")) {
-                lineIdx++
-            } else if (line.contains("findViewById")) {
-                val layoutId = extractLayoutId(line)
-                result.appendln(line.split(".")[0] + "." + layoutId)
-            } else if (!line.contains("butterknife", true))
-                result.appendln(line)
+                    viewList.add(Pair(fieldName, layoutId))
+                    result.appendln("\tprivate lateinit var $fieldName: $type")
+                    lineIdx++
+                } else if (line.trimStart().startsWith("@Inject")) {
+                    result.appendln(line)
+                    result.appendln(lines.get(lineIdx + 1).replace("internal", "internal lateinit"))
+                    lineIdx++
+                } else if (line.contains("Unbinder")) {
+                } else if (line.contains("findViewById")) {
+                    result.appendln(replaceFindViewLine(line))
+                } else if (!line.contains("butterknife", true))
+                    result.appendln(line)
+            } catch (e: Exception) {
+                println("line : $lineIdx Exception!!!")
+                e.printStackTrace()
+                result.appendln("exception : $line")
+            }
 
             lineIdx++
         }
@@ -69,13 +73,45 @@ object Refactoring {
         if (viewList.size > 0)
             result.appendln(createBindBlock(type, viewList))
 
-        return result.toString()
+        return result.toString().trimEnd()
     }
 
-    fun replaceFindView(org: String): String {
-        val suffix = if (org.contains("=")) " =" + org.split("=")[1] else ""
-        val layoutId = extractLayoutId(org)
-        return org.split(".")[0].replace(Regex("""[()]"""), "") + "." + layoutId + suffix
+    fun replaceFindViewPart(part: String): String {
+        val idx = part.trim().indexOf("findViewById")
+        val prefix = part.substring(0, idx).replace(Regex("""[()]"""), "")
+        val layoutId = extractLayoutId(part)
+        val suffix = if (part.contains(").")) part.substring(part.indexOf(").") + 1) else ""
+
+        val sb = StringBuilder()
+
+        if (prefix.isNotEmpty())
+            sb.append("$prefix")
+
+        sb.append(layoutId)
+        sb.append(suffix)
+
+        return sb.toString()
+    }
+
+    fun replaceFindViewLine(org: String): String {
+        if (org.contains("=")) {
+            val strArr = org.split("=")
+            var prefix = ""
+            var suffix = ""
+
+            if (strArr[0].contains("findViewById")) {
+                prefix = replaceFindViewPart(strArr[0])
+                suffix = strArr[1]
+            } else {
+                prefix = strArr[0]
+                suffix = replaceFindViewPart(strArr[1])
+            }
+
+            return "${prefix.trim()} = ${suffix.trim()}"
+
+        } else {
+            return org
+        }
     }
 
     fun createBindBlock(type: SourceType, viewList: List<Pair<String, String>>): String {
@@ -100,17 +136,22 @@ object Refactoring {
 val ROOT = File("/Users/gom/Android/flitto_android/flitto-android/src/main/java/com/flitto/app")
 
 fun main(args: Array<String>) {
-    val target = File(ROOT, "ui/event")
+    val target = File(ROOT, "ui/store")
 
     target.walk().filter { it.isFile && it.extension.equals("kt") }.forEach {
-        val result = Refactoring.refactoring(it)
-        println(it.path)
-        println("-------------------------------")
-        println(result)
+        try {
+            val result = Refactoring.refactoring(it)
 
-        it.printWriter().use {
-            it.print(result)
+            println("start ---- ${it.path}")
+
+            it.printWriter().use {
+                it.print(result)
+            }
+
+        } catch (e: Exception) {
+            println("Expcetion : ${it.path}")
         }
+
     }
 
 }

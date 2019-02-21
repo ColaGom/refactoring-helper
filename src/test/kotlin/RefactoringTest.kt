@@ -44,11 +44,32 @@ class RefactoringTest {
         val line =
             "(rootView.findViewById<View>(R.id.event_user_info_title_txt) as TextView).text = LangSet.getInstance().get(\"plz_sel_sex_and_age\")"
         assertEquals(
-            Refactoring.replaceFindView(line),
-            "rootView.event_user_info_title_txt = LangSet.getInstance().get(\"plz_sel_sex_and_age\")"
+            Refactoring.replaceFindViewLine(line),
+            "rootView.event_user_info_title_txt.text = LangSet.getInstance().get(\"plz_sel_sex_and_age\")"
         )
     }
+
+    @Test
+    fun replaceLayoutIdTest2() {
+        val line = "qDateTxt = findViewById<View>(R.id.askQDate) as TextView";
+        assertEquals(Refactoring.replaceFindViewLine(line), "qDateTxt = askQDate")
+    }
+
+
+    @Test
+    fun replaceUnbinderTest() {
+        val actual = "  private int checkedIndex;\n" +
+                "  private ProgressDialog loadingDialog;\n" +
+                "  private AlertDialog alertDialog;"
+
+        assertEquals(Refactoring.refactoring(MOCK_PART_UNBIND), actual)
+    }
 }
+
+val MOCK_PART_UNBIND = "  private int checkedIndex;\n" +
+        "  private ProgressDialog loadingDialog;\n" +
+        "  private Unbinder unbinder;\n" +
+        "  private AlertDialog alertDialog;"
 
 val MOCK_SRC = "package com.flitto.app.ui.event.history\n" +
         "\n" +
