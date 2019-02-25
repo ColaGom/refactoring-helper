@@ -1,5 +1,6 @@
 import org.junit.Test
 import kotlin.test.assertEquals
+import kotlin.test.asserter
 
 class RefactoringTest {
     @Test
@@ -63,6 +64,13 @@ class RefactoringTest {
                 "  private AlertDialog alertDialog;"
 
         assertEquals(Refactoring.refactoring(MOCK_PART_UNBIND), actual)
+    }
+
+    @Test
+    fun extractMethodNameTest() {
+        val line = "internal fun selectCountry(view: View) {"
+
+        assertEquals(Refactoring.extractMethodName(line), "selectCountry")
     }
 }
 

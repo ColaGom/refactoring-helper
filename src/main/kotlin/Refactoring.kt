@@ -11,10 +11,14 @@ object Refactoring {
         None
     }
 
-    val patternLayoutId = Pattern.compile(Pattern.quote("id.") + "(.*?)" + Pattern.quote(")"))
-    val patternFieldName = Pattern.compile("va.* (.*?)" + Pattern.quote(":"))
-    val patternType = Pattern.compile(Pattern.quote(": ") + "(.*?)" + Pattern.quote("?"))
-    val patternClassName = Pattern.compile(Pattern.quote("class ") + "(.*?)\\W")
+    private val NEED_FIX = "!!-FIX"
+
+    private val patternLayoutId = Pattern.compile(Pattern.quote("id.") + "(.*?)" + Pattern.quote(")"))
+    private val patternFieldName = Pattern.compile("va.* (.*?)" + Pattern.quote(":"))
+    private val patternType = Pattern.compile(Pattern.quote(": ") + "(.*?)" + Pattern.quote("?"))
+    private val patternClassName = Pattern.compile(Pattern.quote("class ") + "(.*?)\\W")
+    private val patternMethodName = Pattern.compile(Pattern.quote("fun ") + "(.*?)" + Pattern.quote("("))
+
     fun refactoring(file: File) = refactoring(file.readText())
     fun refactoring(origin: String): String {
         val lines = origin.lines()
@@ -44,27 +48,41 @@ object Refactoring {
             }
 
             try {
-                if (line.trimStart().startsWith("@BindView")) {
-                    val layoutId = extractLayoutId(line)
-                    val fieldName = extractFieldName(lines.get(lineIdx + 1))
-                    val type = extractType(lines.get(lineIdx + 1))
+                when (checkRule(line)) {
+                    Rule.NOT_FOUND -> {
+                        result.appendln(line)
+                    }
+                    Rule.BUTTER_UNBINDER,
+                    Rule.BUTTER_COMMON -> {
+                        // Skip.
+                    }
+                    Rule.BUTTER_BINDVIEW -> {
+                        val layoutId = extractLayoutId(line)
+                        val fieldName = extractFieldName(lines.get(lineIdx + 1))
+                        val type = extractType(lines.get(lineIdx + 1))
 
-                    viewList.add(Pair(fieldName, layoutId))
-                    result.appendln("\tprivate lateinit var $fieldName: $type")
-                    lineIdx++
-                } else if (line.trimStart().startsWith("@Inject")) {
-                    result.appendln(line)
-                    result.appendln(lines.get(lineIdx + 1).replace("internal", "internal lateinit"))
-                    lineIdx++
-                } else if (line.contains("Unbinder")) {
-                } else if (line.contains("findViewById")) {
-                    result.appendln(replaceFindViewLine(line))
-                } else if (!line.contains("butterknife", true))
-                    result.appendln(line)
+                        viewList.add(Pair(fieldName, layoutId))
+                        result.append("\tprivate lateinit var $fieldName: $type")
+                        lineIdx++
+                    }
+                    Rule.BUTTER_ONCLICK -> {
+                        val layoutId = extractLayoutId(line)
+                        val funcName = extractMethodName(line)
+                        result.appendln("$NEED_FIX $line")
+                        result.appendln("$layoutId.setOnClickListener { $funcName() }")
+                    }
+                    Rule.DAGGER_INJECT -> {
+                        result.appendln(line)
+                        result.appendln(lines.get(lineIdx + 1).replace("internal", "internal lateinit"))
+                        lineIdx++
+                    }
+                    Rule.FIND_VIEW -> result.appendln(replaceFindViewLine(line))
+                }
+
             } catch (e: Exception) {
                 println("line : $lineIdx Exception!!!")
                 e.printStackTrace()
-                result.appendln("exception : $line")
+                result.appendln("$NEED_FIX exception : $line")
             }
 
             lineIdx++
@@ -85,7 +103,7 @@ object Refactoring {
         val sb = StringBuilder()
 
         if (prefix.isNotEmpty())
-            sb.append("$prefix")
+            sb.append("$prefix.")
 
         sb.append(layoutId)
         sb.append(suffix)
@@ -131,6 +149,7 @@ object Refactoring {
     fun extractFieldName(line: String) = patternFieldName.grap(line)
     fun extractType(line: String) = patternType.grap(line)
     fun extractClassName(line: String) = patternClassName.grap(line)
+    fun extractMethodName(line: String) = patternMethodName.grap(line)
 }
 
 val ROOT = File("/Users/gom/Android/flitto_android/flitto-android/src/main/java/com/flitto/app")
