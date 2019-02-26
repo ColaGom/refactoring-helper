@@ -103,7 +103,7 @@ object Refactoring {
         val sb = StringBuilder()
 
         if (prefix.isNotEmpty())
-            sb.append("$prefix.")
+            sb.append("${prefix.replace(".","")}.")
 
         sb.append(layoutId)
         sb.append(suffix)
@@ -136,7 +136,7 @@ object Refactoring {
         val param = if (type == SourceType.Activity || type == SourceType.Fragment) "" else "view : View"
         val prefixField = if (param.isNotEmpty()) "view." else ""
         val sb = StringBuilder()
-        sb.appendln("fun bindView($param) {")
+        sb.appendln("private fun bindView($param) {")
         viewList.forEach {
             sb.appendln("\t${it.first} = $prefixField${it.second}")
         }
@@ -155,7 +155,7 @@ object Refactoring {
 val ROOT = File("/Users/gom/Android/flitto_android/flitto-android/src/main/java/com/flitto/app")
 
 fun main(args: Array<String>) {
-    val target = File(ROOT, "ui/store")
+    val target = File(ROOT, "ui/content")
 
     target.walk().filter { it.isFile && it.extension.equals("kt") }.forEach {
         try {
