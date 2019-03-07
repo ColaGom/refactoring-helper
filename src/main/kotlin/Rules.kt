@@ -5,7 +5,7 @@ enum class Rule {
     BUTTER_ONCLICK,
     BUTTER_UNBINDER,
     DAGGER_INJECT,
-    FIND_VIEW,
+    FIND_VIEW
 }
 
 val ANN_BUTTER_BINDVIEW = "@BindView"
@@ -21,9 +21,9 @@ fun checkRule(line: String): Rule {
         if (startsWith(ANN_BUTTER_BINDVIEW)) return Rule.BUTTER_BINDVIEW
         else if (startsWith(ANN_BUTTER_ONCLICK)) return Rule.BUTTER_ONCLICK
         else if (startsWith(ANN_DAGGER_INJECT)) return Rule.DAGGER_INJECT
-        else if (contains(SNIPPET_UNBINDER)) return Rule.BUTTER_UNBINDER
+        else if (contains(SNIPPET_UNBINDER,true)) return Rule.BUTTER_UNBINDER
         else if (contains(SNIPPET_FIND_VIEW)) return Rule.FIND_VIEW
-        else if (contains(SNIPPET_BUTTER_COMMON)) return Rule.BUTTER_COMMON
+        else if (contains(SNIPPET_BUTTER_COMMON, true)) return Rule.BUTTER_COMMON
     }
 
     return Rule.NOT_FOUND

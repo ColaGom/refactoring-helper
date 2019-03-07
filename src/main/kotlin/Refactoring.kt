@@ -24,6 +24,7 @@ object Refactoring {
         val lines = origin.lines()
         var result = StringBuilder()
         var viewList = mutableListOf<Pair<String, String>>()
+        var funcList = mutableListOf<Pair<String, String>>()
 
 
         var lineIdx = 0
@@ -62,14 +63,15 @@ object Refactoring {
                         val type = extractType(lines.get(lineIdx + 1))
 
                         viewList.add(Pair(fieldName, layoutId))
-                        result.append("\tprivate lateinit var $fieldName: $type")
+                        result.appendln("\tprivate lateinit var $fieldName: $type")
                         lineIdx++
                     }
                     Rule.BUTTER_ONCLICK -> {
                         val layoutId = extractLayoutId(line)
-                        val funcName = extractMethodName(line)
-                        result.appendln("$NEED_FIX $line")
-                        result.appendln("$layoutId.setOnClickListener { $funcName() }")
+                        val funcName = extractMethodName(lines.get(lineIdx + 1))
+                        result.appendln("//$line")
+                        funcList.add(Pair(layoutId, funcName))
+//                        result.appendln("$layoutId.setOnClickListener { $funcName() }")
                     }
                     Rule.DAGGER_INJECT -> {
                         result.appendln(line)
@@ -91,6 +93,11 @@ object Refactoring {
         if (viewList.size > 0)
             result.appendln(createBindBlock(type, viewList))
 
+        funcList.forEach {
+            result.appendln("${it.first}.setOnClickListener { ${it.second}() }")
+        }
+
+
         return result.toString().trimEnd()
     }
 
@@ -103,7 +110,7 @@ object Refactoring {
         val sb = StringBuilder()
 
         if (prefix.isNotEmpty())
-            sb.append("${prefix.replace(".","")}.")
+            sb.append("${prefix.replace(".", "")}.")
 
         sb.append(layoutId)
         sb.append(suffix)
@@ -155,7 +162,7 @@ object Refactoring {
 val ROOT = File("/Users/gom/Android/flitto_android/flitto-android/src/main/java/com/flitto/app")
 
 fun main(args: Array<String>) {
-    val target = File(ROOT, "ui/content")
+    val target = File(ROOT, "ui/login")
 
     target.walk().filter { it.isFile && it.extension.equals("kt") }.forEach {
         try {
@@ -172,5 +179,9 @@ fun main(args: Array<String>) {
         }
 
     }
+
+}
+
+fun printAnalysis() {
 
 }
