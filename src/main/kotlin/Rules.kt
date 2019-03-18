@@ -5,16 +5,21 @@ enum class Rule {
     BUTTER_ONCLICK,
     BUTTER_UNBINDER,
     DAGGER_INJECT,
+    RX_SUBJECT_BEHAVOIR,
+    RX_SUBJECT_PUBLISH,
     FIND_VIEW
 }
 
-val ANN_BUTTER_BINDVIEW = "@BindView"
-val ANN_BUTTER_ONCLICK = "@OnClick"
-val ANN_DAGGER_INJECT = "@Inject"
+const val ANN_BUTTER_BINDVIEW = "@BindView"
+const val ANN_BUTTER_ONCLICK = "@OnClick"
+const val ANN_DAGGER_INJECT = "@Inject"
 
-val SNIPPET_UNBINDER = "Unbinder"
-val SNIPPET_FIND_VIEW = "findViewById"
-val SNIPPET_BUTTER_COMMON = "butterknife"
+const val SNIPPET_UNBINDER = "Unbinder"
+const val SNIPPET_FIND_VIEW = "findViewById"
+const val SNIPPET_BUTTER_COMMON = "butterknife"
+
+const val RX_SUBJECT_BEHAVIOR = ": BehaviorSubject<"
+const val RX_SUBJECT_PUBLISH = ": PublishSubject<"
 
 fun checkRule(line: String): Rule {
     line.trimStart().run {
@@ -24,6 +29,8 @@ fun checkRule(line: String): Rule {
         else if (contains(SNIPPET_UNBINDER,true)) return Rule.BUTTER_UNBINDER
         else if (contains(SNIPPET_FIND_VIEW)) return Rule.FIND_VIEW
         else if (contains(SNIPPET_BUTTER_COMMON, true)) return Rule.BUTTER_COMMON
+        else if (contains(RX_SUBJECT_BEHAVIOR)) return Rule.RX_SUBJECT_BEHAVOIR
+        else if (contains(RX_SUBJECT_PUBLISH)) return Rule.RX_SUBJECT_PUBLISH
     }
 
     return Rule.NOT_FOUND
