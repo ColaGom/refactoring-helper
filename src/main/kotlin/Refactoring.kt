@@ -159,7 +159,7 @@ object Refactoring {
     fun extractMethodName(line: String) = patternMethodName.grap(line)
 }
 
-val ROOT = File("/Users/gom/Android/flitto_android/flitto-android/src/main/java/com/flitto/app")
+val ROOT = File("##")
 
 fun main(args: Array<String>) {
     val target = File(ROOT, "ui/login")
